@@ -38,9 +38,15 @@ def load_data():
     return merged_data
 
 st.title("📊 Dashboard Analisis E-Commerce")
-st.sidebar.header("⚙️ Pengaturan")
 
+# Menampilkan total transaksi dan rentang waktu data
+st.sidebar.header("⚙️ Pengaturan")
 data = load_data()
+total_transaksi = len(data)
+rentang_waktu = f"{data['order_purchase_timestamp'].min().date()} - {data['order_purchase_timestamp'].max().date()}"
+
+st.write(f"**Total Transaksi:** {total_transaksi}")
+st.write(f"**Rentang Waktu:** {rentang_waktu}")
 
 st.subheader("📊 Jumlah Pesanan per Bulan")
 fig, ax = plt.subplots(figsize=(12, 5))
@@ -99,3 +105,6 @@ st.write("Analisis tren jumlah pesanan per bulan menunjukkan pola pertumbuhan at
 
 st.subheader("📋 Data E-Commerce")
 st.dataframe(data.head())
+
+# Menambahkan copyright
+st.write("© Muhammad Zainudin Damar Jati")
