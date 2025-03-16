@@ -42,12 +42,12 @@ st.sidebar.header("⚙️ Pengaturan")
 
 data = load_data()
 
-total_transaksi = data.shape[0]
+total_transaksi = len(data)
 rentang_waktu = f"{data['order_purchase_timestamp'].min().strftime('%Y-%m-%d')} hingga {data['order_purchase_timestamp'].max().strftime('%Y-%m-%d')}"
 
 st.subheader("📊 Jumlah Pesanan per Bulan")
-st.write(f"**Total Transaksi:** {total_transaksi}")
-st.write(f"**Rentang Waktu:** {rentang_waktu}")
+st.write(f"Total Transaksi: {total_transaksi}")
+st.write(f"Rentang Waktu: {rentang_waktu}")
 fig, ax = plt.subplots(figsize=(12, 5))
 data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
 ax.set_title("Jumlah Pesanan per Bulan")
@@ -96,4 +96,4 @@ st.write("Analisis tren pesanan menunjukkan adanya fluktuasi jumlah pesanan dari
 st.subheader("📋 Data E-Commerce")
 st.dataframe(data.head())
 
-st.write("\n\nCopyright © Muhammad Zainudin Damar Jati")
+st.write("© Copyright Muhammad Zainudin Damar Jati")
