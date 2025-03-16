@@ -42,9 +42,6 @@ st.sidebar.header("⚙️ Pengaturan")
 
 data = load_data()
 
-data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
-monthly_orders = data.groupby('order_month').size()
-
 st.subheader("📊 Jumlah Pesanan per Bulan")
 fig, ax = plt.subplots(figsize=(12, 5))
 data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
@@ -54,12 +51,12 @@ ax.set_ylabel("Jumlah Pesanan")
 ax.tick_params(axis='x', rotation=45)
 st.pyplot(fig)
 
-st.subheader("⏳ Rata-rata Waktu Pengiriman vs Estimasi")
+st.subheader("❓ Bagaimana waktu rata-rata pengiriman pesanan dibandingkan dengan estimasi waktu pengiriman?")
 data['delivery_time'] = (data['order_delivered_customer_date'] - data['order_purchase_timestamp']).dt.days
 avg_actual_delivery = data['delivery_time'].mean()
 avg_estimated_delivery = (data['order_estimated_delivery_date'] - data['order_purchase_timestamp']).dt.days.mean()
 fig, ax = plt.subplots(figsize=(6, 4))
-sns.barplot(x=["Actual", "Estimated"], y=[avg_actual_delivery, avg_estimated_delivery], palette=["blue", "red"], ax=ax)
+sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual_delivery, avg_estimated_delivery], palette=["blue", "red"], ax=ax)
 ax.set_ylabel("Hari")
 st.pyplot(fig)
 
@@ -74,20 +71,22 @@ ax.set_ylabel("Jumlah Pesanan")
 ax.set_xticklabels(["On Time", "Late"], rotation=0)
 st.pyplot(fig)
 
-st.subheader("📆 Tren Jumlah Pesanan per Bulan")
-monthly_orders_filtered = monthly_orders[monthly_orders.index <= '2018-08']
+st.write("Visualisasi menunjukkan perbedaan antara waktu pengiriman aktual dan perkiraan waktu pengiriman. Jika pengiriman aktual lebih lama dari estimasi, maka terdapat indikasi keterlambatan yang mungkin disebabkan oleh kendala operasional, faktor cuaca, atau infrastruktur logistik. Sebaliknya, jika pengiriman aktual lebih cepat dari estimasi, ini menunjukkan efisiensi tinggi dalam sistem logistik dan operasional.")
+
+st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
+data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
+monthly_orders = data.groupby('order_month').size()
 fig, ax = plt.subplots(figsize=(12, 5))
-monthly_orders_filtered.plot(ax=ax, marker='o', linestyle='-', color='blue')
-ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu (Hingga Agustus 2018)")
+monthly_orders.plot(marker='o', linestyle='-', color='blue', ax=ax)
+ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu")
 ax.set_xlabel("Waktu (Bulan)")
 ax.set_ylabel("Jumlah Pesanan")
 ax.tick_params(axis='x', rotation=45)
 ax.grid()
 st.pyplot(fig)
 
-st.subheader("📆 Pola Musiman dalam Jumlah Pesanan")
-data['order_month_numeric'] = data['order_purchase_timestamp'].dt.month
-seasonal_trend = data['order_month_numeric'].value_counts().sort_index()
+data['month'] = data['order_purchase_timestamp'].dt.month
+seasonal_trend = data.groupby('month').size()
 fig, ax = plt.subplots(figsize=(8, 4))
 seasonal_trend.plot(kind='bar', color='green', alpha=0.7, ax=ax)
 ax.set_title("Pola Musiman dalam Jumlah Pesanan")
@@ -95,6 +94,8 @@ ax.set_xlabel("Bulan")
 ax.set_ylabel("Jumlah Pesanan")
 ax.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
 st.pyplot(fig)
+
+st.write("Analisis tren jumlah pesanan per bulan menunjukkan pola pertumbuhan atau penurunan permintaan pelanggan dari waktu ke waktu. Jika jumlah pesanan meningkat, ini menandakan perkembangan bisnis yang positif, sehingga strategi pemasaran dan operasional dapat ditingkatkan untuk mempertahankan momentum.")
 
 st.subheader("📋 Data E-Commerce")
 st.dataframe(data.head())
