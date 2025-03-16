@@ -38,16 +38,18 @@ def load_data():
     return merged_data
 
 st.title("📊 Dashboard Analisis E-Commerce")
-st.sidebar.header("⚙️ Pengaturan")
 
 data = load_data()
 
-total_transaksi = len(data)
+total_transaksi = data.shape[0]
+st.write(f"**Total Transaksi:** {total_transaksi}")
+
 rentang_waktu = f"{data['order_purchase_timestamp'].min().strftime('%Y-%m-%d')} hingga {data['order_purchase_timestamp'].max().strftime('%Y-%m-%d')}"
+st.write(f"**Rentang Waktu:** {rentang_waktu}")
+
+st.sidebar.header("⚙️ Pengaturan")
 
 st.subheader("📊 Jumlah Pesanan per Bulan")
-st.write(f"Total Transaksi: {total_transaksi}")
-st.write(f"Rentang Waktu: {rentang_waktu}")
 fig, ax = plt.subplots(figsize=(12, 5))
 data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
 ax.set_title("Jumlah Pesanan per Bulan")
@@ -65,8 +67,6 @@ sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual
 ax.set_ylabel("Hari")
 st.pyplot(fig)
 
-st.write("Berdasarkan hasil analisis, terdapat perbedaan antara waktu pengiriman aktual dan estimasi yang dapat mencerminkan efisiensi atau kendala dalam proses logistik. Jika waktu pengiriman aktual lebih lama dari estimasi, ini menunjukkan adanya keterlambatan yang dapat disebabkan oleh faktor operasional, kondisi cuaca, atau infrastruktur logistik yang kurang optimal. Sebaliknya, jika pengiriman berlangsung lebih cepat dari estimasi, maka sistem distribusi berjalan dengan efisien. Distribusi status pengiriman (On Time, Late, dan Pending) memberikan gambaran lebih jelas mengenai kinerja pengiriman. Jika proporsi pesanan yang mengalami keterlambatan (Late) cukup tinggi, maka optimalisasi dalam sistem logistik dan manajemen pengiriman diperlukan untuk meningkatkan kepuasan pelanggan dan memastikan layanan yang lebih andal.")
-
 st.subheader("🚚 Distribusi Status Pengiriman")
 data['delivery_status'] = np.where(data['order_delivered_customer_date'] > data['order_estimated_delivery_date'], 'Late', 'On Time')
 delivery_counts = data['delivery_status'].value_counts()
@@ -77,6 +77,8 @@ ax.set_xlabel("Status Pengiriman")
 ax.set_ylabel("Jumlah Pesanan")
 ax.set_xticklabels(["On Time", "Late"], rotation=0)
 st.pyplot(fig)
+
+st.write("Visualisasi menunjukkan perbedaan antara waktu pengiriman aktual dan perkiraan waktu pengiriman. Jika pengiriman aktual lebih lama dari estimasi, maka terdapat indikasi keterlambatan yang mungkin disebabkan oleh kendala operasional, faktor cuaca, atau infrastruktur logistik. Sebaliknya, jika pengiriman aktual lebih cepat dari estimasi, ini menunjukkan efisiensi tinggi dalam sistem logistik dan operasional.")
 
 st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
 data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
@@ -91,9 +93,20 @@ ax.tick_params(axis='x', rotation=45)
 ax.grid()
 st.pyplot(fig)
 
-st.write("Analisis tren pesanan menunjukkan adanya fluktuasi jumlah pesanan dari waktu ke waktu. Jika tren menunjukkan peningkatan pesanan secara konsisten, ini menandakan pertumbuhan bisnis yang positif, sehingga strategi pemasaran dan operasional dapat diperkuat untuk mempertahankan momentum tersebut. Sebaliknya, jika terjadi tren penurunan, maka perlu dilakukan evaluasi terhadap faktor-faktor yang berpengaruh, seperti perubahan tren pasar, kondisi ekonomi, atau faktor musiman. Dari analisis pola musiman (seasonal trend), terlihat adanya lonjakan pesanan di bulan-bulan tertentu, misalnya pada akhir tahun, yang sering dikaitkan dengan musim belanja dan promosi. Dengan memahami pola ini, bisnis dapat mengoptimalkan strategi stok, pemasaran, dan operasional agar lebih responsif terhadap lonjakan permintaan di periode strategis, serta meningkatkan efisiensi dalam rantai pasokan dan distribusi.")
+data['month'] = data['order_purchase_timestamp'].dt.month
+seasonal_trend = data.groupby('month').size()
+fig, ax = plt.subplots(figsize=(8, 4))
+seasonal_trend.plot(kind='bar', color='green', alpha=0.7, ax=ax)
+ax.set_title("Pola Musiman dalam Jumlah Pesanan")
+ax.set_xlabel("Bulan")
+ax.set_ylabel("Jumlah Pesanan")
+ax.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
+st.pyplot(fig)
+
+st.write("Analisis tren jumlah pesanan per bulan menunjukkan pola pertumbuhan atau penurunan permintaan pelanggan dari waktu ke waktu. Jika jumlah pesanan meningkat, ini menandakan perkembangan bisnis yang positif, sehingga strategi pemasaran dan operasional dapat ditingkatkan untuk mempertahankan momentum.")
 
 st.subheader("📋 Data E-Commerce")
 st.dataframe(data.head())
 
-st.write("© Copyright Muhammad Zainudin Damar Jati")
+st.markdown("---")
+st.markdown("© Muhammad Zainudin Damar Jati")
