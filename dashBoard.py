@@ -81,10 +81,10 @@ st.write("Visualisasi menunjukkan perbedaan antara waktu pengiriman aktual dan p
 
 st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
 data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
-monthly_orders = data.groupby('order_month').size()
+monthly_orders_filtered = monthly_orders[monthly_orders.index <= '2018-08']
 fig, ax = plt.subplots(figsize=(12, 5))
-monthly_orders.plot(marker='o', linestyle='-', color='blue', ax=ax)
-ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu")
+monthly_orders_filtered.plot(ax=ax, marker='o', linestyle='-', color='blue')
+ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu (Hingga Agustus 2018)")
 ax.set_xlabel("Waktu (Bulan)")
 ax.set_ylabel("Jumlah Pesanan")
 ax.tick_params(axis='x', rotation=45)
