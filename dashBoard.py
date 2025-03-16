@@ -37,7 +37,7 @@ def load_data():
 
     return merged_data
 
-st.title("📊 Dashboard Analisis E-Commerce")
+st.title("📊 Analisis E-Commerce")
 
 data = load_data()
 
@@ -67,7 +67,6 @@ sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual
 ax.set_ylabel("Hari")
 st.pyplot(fig)
 
-st.subheader("🚚 Distribusi Status Pengiriman")
 data['delivery_status'] = np.where(data['order_delivered_customer_date'] > data['order_estimated_delivery_date'], 'Late', 'On Time')
 delivery_counts = data['delivery_status'].value_counts()
 fig, ax = plt.subplots(figsize=(6, 4))
