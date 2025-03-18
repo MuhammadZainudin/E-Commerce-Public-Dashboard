@@ -47,6 +47,20 @@ data = load_data()
 # Sidebar untuk filter interaktif
 st.sidebar.header("⚙️ Pengaturan")
 
+# Filter berdasarkan rentang tanggal
+min_date = data['order_purchase_timestamp'].min()
+max_date = data['order_purchase_timestamp'].max()
+date_range = st.sidebar.date_input(
+    "Pilih Rentang Tanggal", [min_date, max_date], 
+    min_value=min_date, max_value=max_date
+)
+
+# Filter berdasarkan kategori produk
+categories = data['product_category_name'].dropna().unique()
+selected_category = st.sidebar.selectbox(
+    "Pilih Kategori Produk", ['Semua'] + list(categories)
+)
+
 # Filter berdasarkan metode pembayaran
 payment_methods = data['payment_type'].dropna().unique()
 selected_payment = st.sidebar.multiselect("Pilih Metode Pembayaran", payment_methods, default=payment_methods)
@@ -56,8 +70,55 @@ delivery_status = data['order_status'].dropna().unique()
 selected_status = st.sidebar.multiselect("Pilih Status Pengiriman", delivery_status, default=delivery_status)
 
 # Terapkan filter ke data
-filtered_data = data[data['payment_type'].isin(selected_payment)]
+filtered_data = data[
+    (data['order_purchase_timestamp'] >= pd.to_datetime(date_range[0])) & 
+    (data['order_purchase_timestamp'] <= pd.to_datetime(date_range[1]))
+]
+if selected_category != 'Semua':
+    filtered_data = filtered_data[filtered_data['product_category_name'] == selected_category]
+filtered_data = filtered_data[filtered_data['payment_type'].isin(selected_payment)]
 filtered_data = filtered_data[filtered_data['order_status'].isin(selected_status)]
+
+# Visualisasi jumlah pesanan per bulan
+st.subheader("📊 Jumlah Pesanan per Bulan")
+fig, ax = plt.subplots(figsize=(12, 5))
+filtered_data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
+ax.set_title("Jumlah Pesanan per Bulan")
+ax.set_xlabel("Bulan")
+ax.set_ylabel("Jumlah Pesanan")
+ax.tick_params(axis='x', rotation=45)
+st.pyplot(fig)
+
+# Analisis waktu rata-rata pengiriman
+st.subheader("❓ Waktu Rata-rata Pengiriman vs. Estimasi")
+filtered_data['delivery_time'] = (
+    filtered_data['order_delivered_customer_date'] - filtered_data['order_purchase_timestamp']
+).dt.days
+avg_actual_delivery = filtered_data['delivery_time'].mean()
+avg_estimated_delivery = (
+    filtered_data['order_estimated_delivery_date'] - filtered_data['order_purchase_timestamp']
+).dt.days.mean()
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.barplot(
+    x=["Actual Delivery Time", "Estimated Delivery Time"], 
+    y=[avg_actual_delivery, avg_estimated_delivery], 
+    palette=["blue", "red"], ax=ax
+)
+ax.set_ylabel("Hari")
+st.pyplot(fig)
+
+# Tren jumlah pesanan dari waktu ke waktu
+st.subheader("❓ Tren Jumlah Pesanan dari Waktu ke Waktu")
+filtered_data['order_month'] = filtered_data['order_purchase_timestamp'].dt.to_period('M')
+monthly_orders = filtered_data.groupby('order_month').size()
+fig, ax = plt.subplots(figsize=(12, 5))
+monthly_orders.plot(ax=ax, marker='o', linestyle='-', color='blue')
+ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu")
+ax.set_xlabel("Waktu (Bulan)")
+ax.set_ylabel("Jumlah Pesanan")
+ax.tick_params(axis='x', rotation=45)
+ax.grid()
+st.pyplot(fig)
 
 # Visualisasi jumlah pesanan per metode pembayaran
 st.subheader("📊 Jumlah Pesanan per Metode Pembayaran")
