@@ -44,6 +44,9 @@ st.title("📊 Dashboard Analisis E-Commerce")
 # Load data
 data = load_data()
 
+# Periksa apakah dataset memiliki kolom yang diharapkan
+st.write("Kolom yang tersedia dalam dataset:", data.columns.tolist())
+
 # Sidebar untuk filter interaktif
 st.sidebar.header("⚙️ Pengaturan")
 
@@ -55,61 +58,25 @@ date_range = st.sidebar.date_input(
     min_value=min_date, max_value=max_date
 )
 
-# Filter berdasarkan kategori produk
-categories = data['product_category_name'].dropna().unique()
-selected_category = st.sidebar.selectbox(
-    "Pilih Kategori Produk", ['Semua'] + list(categories)
-)
+# Filter berdasarkan kategori produk (hanya jika kolom tersedia)
+if 'product_category_name' in data.columns:
+    categories = data['product_category_name'].dropna().unique()
+    selected_category = st.sidebar.selectbox(
+        "Pilih Kategori Produk", ['Semua'] + list(categories)
+    )
+else:
+    selected_category = 'Semua'
+    st.sidebar.warning("Kolom 'product_category_name' tidak ditemukan dalam dataset.")
 
 # Terapkan filter ke data
 filtered_data = data[
     (data['order_purchase_timestamp'] >= pd.to_datetime(date_range[0])) & 
     (data['order_purchase_timestamp'] <= pd.to_datetime(date_range[1]))
 ]
-if selected_category != 'Semua':
+if selected_category != 'Semua' and 'product_category_name' in data.columns:
     filtered_data = filtered_data[filtered_data['product_category_name'] == selected_category]
 
 # Visualisasi jumlah pesanan per bulan
 st.subheader("📊 Jumlah Pesanan per Bulan")
 fig, ax = plt.subplots(figsize=(12, 5))
-filtered_data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
-ax.set_title("Jumlah Pesanan per Bulan")
-ax.set_xlabel("Bulan")
-ax.set_ylabel("Jumlah Pesanan")
-ax.tick_params(axis='x', rotation=45)
-st.pyplot(fig)
-
-# Analisis waktu rata-rata pengiriman
-st.subheader("❓ Waktu Rata-rata Pengiriman vs. Estimasi")
-filtered_data['delivery_time'] = (
-    filtered_data['order_delivered_customer_date'] - filtered_data['order_purchase_timestamp']
-).dt.days
-avg_actual_delivery = filtered_data['delivery_time'].mean()
-avg_estimated_delivery = (
-    filtered_data['order_estimated_delivery_date'] - filtered_data['order_purchase_timestamp']
-).dt.days.mean()
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.barplot(
-    x=["Actual Delivery Time", "Estimated Delivery Time"], 
-    y=[avg_actual_delivery, avg_estimated_delivery], 
-    palette=["blue", "red"], ax=ax
-)
-ax.set_ylabel("Hari")
-st.pyplot(fig)
-
-# Tren jumlah pesanan dari waktu ke waktu
-st.subheader("❓ Tren Jumlah Pesanan dari Waktu ke Waktu")
-filtered_data['order_month'] = filtered_data['order_purchase_timestamp'].dt.to_period('M')
-monthly_orders = filtered_data.groupby('order_month').size()
-fig, ax = plt.subplots(figsize=(12, 5))
-monthly_orders.plot(ax=ax, marker='o', linestyle='-', color='blue')
-ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu")
-ax.set_xlabel("Waktu (Bulan)")
-ax.set_ylabel("Jumlah Pesanan")
-ax.tick_params(axis='x', rotation=45)
-ax.grid()
-st.pyplot(fig)
-
-# Tampilkan data yang telah difilter
-st.subheader("📋 Data E-Commerce")
-st.dataframe(filtered_data.head())
+filtered_data['order_purchase_timestamp'].dt.to_period("M
