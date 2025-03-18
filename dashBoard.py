@@ -27,6 +27,7 @@ def load_data():
     orders = load_dataset('orders_dataset.csv')
     order_items = load_dataset('order_items_dataset.csv')
     order_payments = load_dataset('order_payments_dataset.csv')
+    products = load_dataset('products_dataset.csv')  # Tambahkan dataset produk
 
     orders['order_purchase_timestamp'] = pd.to_datetime(orders['order_purchase_timestamp'])
     orders['order_delivered_customer_date'] = pd.to_datetime(orders['order_delivered_customer_date'])
@@ -34,6 +35,7 @@ def load_data():
 
     merged_data = orders.merge(order_items, on='order_id', how='left')
     merged_data = merged_data.merge(order_payments, on='order_id', how='left')
+    merged_data = merged_data.merge(products, on='product_id', how='left')  # Gabungkan data produk
 
     return merged_data
 
@@ -42,34 +44,27 @@ st.sidebar.header("⚙️ Pengaturan")
 
 data = load_data()
 
-# Filter berdasarkan kategori produk
-selected_category = st.sidebar.selectbox("Pilih Kategori Produk", data['product_category_name'].dropna().unique())
-data_filtered = data[data['product_category_name'] == selected_category]
-
-# Grafik jumlah pesanan per bulan
 st.subheader("📊 Jumlah Pesanan per Bulan")
 fig, ax = plt.subplots(figsize=(12, 5))
-data_filtered['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
+data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
 ax.set_title("Jumlah Pesanan per Bulan")
 ax.set_xlabel("Bulan")
 ax.set_ylabel("Jumlah Pesanan")
 ax.tick_params(axis='x', rotation=45)
 st.pyplot(fig)
 
-# Analisis waktu pengiriman
 st.subheader("❓ Bagaimana waktu rata-rata pengiriman pesanan dibandingkan dengan estimasi waktu pengiriman?")
-data_filtered['delivery_time'] = (data_filtered['order_delivered_customer_date'] - data_filtered['order_purchase_timestamp']).dt.days
-avg_actual_delivery = data_filtered['delivery_time'].mean()
-avg_estimated_delivery = (data_filtered['order_estimated_delivery_date'] - data_filtered['order_purchase_timestamp']).dt.days.mean()
+data['delivery_time'] = (data['order_delivered_customer_date'] - data['order_purchase_timestamp']).dt.days
+avg_actual_delivery = data['delivery_time'].mean()
+avg_estimated_delivery = (data['order_estimated_delivery_date'] - data['order_purchase_timestamp']).dt.days.mean()
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual_delivery, avg_estimated_delivery], palette=["blue", "red"], ax=ax)
 ax.set_ylabel("Hari")
 st.pyplot(fig)
 
-# Distribusi status pengiriman
 st.subheader("🚚 Distribusi Status Pengiriman")
-data_filtered['delivery_status'] = np.where(data_filtered['order_delivered_customer_date'] > data_filtered['order_estimated_delivery_date'], 'Late', 'On Time')
-delivery_counts = data_filtered['delivery_status'].value_counts()
+data['delivery_status'] = np.where(data['order_delivered_customer_date'] > data['order_estimated_delivery_date'], 'Late', 'On Time')
+delivery_counts = data['delivery_status'].value_counts()
 fig, ax = plt.subplots(figsize=(6, 4))
 delivery_counts.plot(kind='bar', color=["gray", "red"], ax=ax)
 ax.set_title("Distribusi Status Pengiriman")
@@ -78,10 +73,9 @@ ax.set_ylabel("Jumlah Pesanan")
 ax.set_xticklabels(["On Time", "Late"], rotation=0)
 st.pyplot(fig)
 
-# Tren jumlah pesanan dari waktu ke waktu
-st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu?")
-data_filtered['order_month'] = data_filtered['order_purchase_timestamp'].dt.to_period('M')
-monthly_orders = data_filtered.groupby('order_month').size()
+st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
+data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
+monthly_orders = data.groupby('order_month').size()
 fig, ax = plt.subplots(figsize=(12, 5))
 monthly_orders.plot(marker='o', linestyle='-', color='blue', ax=ax)
 ax.set_title("Tren Jumlah Pesanan dari Waktu ke Waktu")
@@ -91,10 +85,8 @@ ax.tick_params(axis='x', rotation=45)
 ax.grid()
 st.pyplot(fig)
 
-# Pola musiman dalam jumlah pesanan
-st.subheader("📊 Pola Musiman dalam Jumlah Pesanan")
-data_filtered['month'] = data_filtered['order_purchase_timestamp'].dt.month
-seasonal_trend = data_filtered.groupby('month').size()
+data['month'] = data['order_purchase_timestamp'].dt.month
+seasonal_trend = data.groupby('month').size()
 fig, ax = plt.subplots(figsize=(8, 4))
 seasonal_trend.plot(kind='bar', color='green', alpha=0.7, ax=ax)
 ax.set_title("Pola Musiman dalam Jumlah Pesanan")
@@ -103,6 +95,15 @@ ax.set_ylabel("Jumlah Pesanan")
 ax.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
 st.pyplot(fig)
 
-# Tampilkan data
+# Perbaikan Error KeyError: 'product_category_name'
+st.sidebar.subheader("📌 Filter Berdasarkan Kategori Produk")
+if 'product_category_name' in data.columns:
+    selected_category = st.sidebar.selectbox("Pilih Kategori Produk", data['product_category_name'].dropna().unique())
+    filtered_data = data[data['product_category_name'] == selected_category]
+    st.write("Data untuk kategori:", selected_category)
+    st.dataframe(filtered_data.head())
+else:
+    st.sidebar.warning("Kolom 'product_category_name' tidak ditemukan dalam dataset.")
+
 st.subheader("📋 Data E-Commerce")
-st.dataframe(data_filtered.head())
+st.dataframe(data.head())
