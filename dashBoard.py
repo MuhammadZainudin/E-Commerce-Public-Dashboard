@@ -55,29 +55,43 @@ date_range = st.sidebar.date_input(
     min_value=min_date, max_value=max_date
 )
 
-# Filter berdasarkan kategori produk
-categories = data['product_category_name'].dropna().unique()
-selected_category = st.sidebar.selectbox(
-    "Pilih Kategori Produk", ['Semua'] + list(categories)
-)
+# Cek apakah kolom 'product_category_name' ada dalam data
+if 'product_category_name' in data.columns:
+    categories = data['product_category_name'].dropna().unique()
+    selected_category = st.sidebar.selectbox(
+        "Pilih Kategori Produk", ['Semua'] + list(categories)
+    )
+else:
+    selected_category = 'Semua'
+    st.sidebar.warning("Kolom 'product_category_name' tidak ditemukan dalam dataset.")
 
-# Filter berdasarkan metode pembayaran
-payment_methods = data['payment_type'].dropna().unique()
-selected_payment = st.sidebar.multiselect("Pilih Metode Pembayaran", payment_methods, default=payment_methods)
+# Cek apakah kolom 'payment_type' ada dalam data
+if 'payment_type' in data.columns:
+    payment_methods = data['payment_type'].dropna().unique()
+    selected_payment = st.sidebar.multiselect("Pilih Metode Pembayaran", payment_methods, default=payment_methods)
+else:
+    selected_payment = []
+    st.sidebar.warning("Kolom 'payment_type' tidak ditemukan dalam dataset.")
 
-# Filter berdasarkan status pengiriman
-delivery_status = data['order_status'].dropna().unique()
-selected_status = st.sidebar.multiselect("Pilih Status Pengiriman", delivery_status, default=delivery_status)
+# Cek apakah kolom 'order_status' ada dalam data
+if 'order_status' in data.columns:
+    delivery_status = data['order_status'].dropna().unique()
+    selected_status = st.sidebar.multiselect("Pilih Status Pengiriman", delivery_status, default=delivery_status)
+else:
+    selected_status = []
+    st.sidebar.warning("Kolom 'order_status' tidak ditemukan dalam dataset.")
 
 # Terapkan filter ke data
 filtered_data = data[
     (data['order_purchase_timestamp'] >= pd.to_datetime(date_range[0])) & 
     (data['order_purchase_timestamp'] <= pd.to_datetime(date_range[1]))
 ]
-if selected_category != 'Semua':
+if selected_category != 'Semua' and 'product_category_name' in data.columns:
     filtered_data = filtered_data[filtered_data['product_category_name'] == selected_category]
-filtered_data = filtered_data[filtered_data['payment_type'].isin(selected_payment)]
-filtered_data = filtered_data[filtered_data['order_status'].isin(selected_status)]
+if selected_payment and 'payment_type' in data.columns:
+    filtered_data = filtered_data[filtered_data['payment_type'].isin(selected_payment)]
+if selected_status and 'order_status' in data.columns:
+    filtered_data = filtered_data[filtered_data['order_status'].isin(selected_status)]
 
 # Visualisasi jumlah pesanan per bulan
 st.subheader("📊 Jumlah Pesanan per Bulan")
@@ -118,28 +132,6 @@ ax.set_xlabel("Waktu (Bulan)")
 ax.set_ylabel("Jumlah Pesanan")
 ax.tick_params(axis='x', rotation=45)
 ax.grid()
-st.pyplot(fig)
-
-# Visualisasi jumlah pesanan per metode pembayaran
-st.subheader("📊 Jumlah Pesanan per Metode Pembayaran")
-fig, ax = plt.subplots(figsize=(10, 5))
-payment_counts = filtered_data['payment_type'].value_counts()
-payment_counts.plot(kind='bar', color='skyblue', ax=ax)
-ax.set_title("Jumlah Pesanan per Metode Pembayaran")
-ax.set_xlabel("Metode Pembayaran")
-ax.set_ylabel("Jumlah Pesanan")
-ax.tick_params(axis='x', rotation=45)
-st.pyplot(fig)
-
-# Visualisasi jumlah pesanan per status pengiriman
-st.subheader("📊 Distribusi Status Pengiriman")
-fig, ax = plt.subplots(figsize=(10, 5))
-status_counts = filtered_data['order_status'].value_counts()
-status_counts.plot(kind='bar', color='salmon', ax=ax)
-ax.set_title("Distribusi Status Pengiriman")
-ax.set_xlabel("Status Pengiriman")
-ax.set_ylabel("Jumlah Pesanan")
-ax.tick_params(axis='x', rotation=45)
 st.pyplot(fig)
 
 # Tampilkan data yang telah difilter
