@@ -92,7 +92,7 @@ fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x="delivery_status", data=filtered_data, palette="viridis", order=["On Time", "Late", "Pending"], ax=ax)
 st.pyplot(fig)
 
-st.subheader("Hubungan Waktu Pengiriman vs Estimasi")
+st.subheader("Hubungan Waktu Pengiriman vs Estimasi Berdasarkan Status Pengiriman")
 fig, ax = plt.subplots(figsize=(8, 5))
 sns.scatterplot(x="estimated_delivery_time", y="delivery_time", hue="delivery_status", data=filtered_data, alpha=0.6,
                 ax=ax)
