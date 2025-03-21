@@ -133,7 +133,7 @@ st.pyplot(fig)
 
 grouped_data = filtered_data.groupby(['order_month', 'delivery_status']).size().reset_index(name='order_count')
 
-st.subheader("Tren Pesanan Berdasarkan Status Pengiriman")
+st.subheader("Tren Pesanan dari Waktu ke Waktu Berdasarkan Status Pengiriman")
 fig, ax = plt.subplots(figsize=(12, 5))
 sns.lineplot(data=grouped_data, x='order_month', y='order_count', hue='delivery_status', marker='o', ax=ax)
 plt.xticks(rotation=45)
