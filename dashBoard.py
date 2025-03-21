@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import requests
 import zipfile
 import io
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
+import calendar
 
-sns.set(style='dark')
 
 @st.cache_data
 def load_data():
@@ -37,86 +37,114 @@ def load_data():
 
     return merged_data
 
-st.title("📊 Dashboard Analisis E-Commerce")
-st.sidebar.header("⚙️ Pengaturan")
 
 data = load_data()
 
-# Interaktif: Filter data berdasarkan rentang tanggal
-st.sidebar.subheader("Filter Data")
-start_date = st.sidebar.date_input("Tanggal Awal", data['order_purchase_timestamp'].min())
-end_date = st.sidebar.date_input("Tanggal Akhir", data['order_purchase_timestamp'].max())
-data = data[(data['order_purchase_timestamp'] >= pd.to_datetime(start_date)) & (data['order_purchase_timestamp'] <= pd.to_datetime(end_date))]
+default_start_date = pd.to_datetime("2016-09-15").date()
+default_end_date = pd.to_datetime("2018-08-29").date()
 
-st.subheader("📊 Jumlah Pesanan per Bulan")
+st.sidebar.header("\U0001F4C5 Pilih Rentang Waktu")
+start_date = st.sidebar.date_input("Tanggal Mulai", default_start_date, min_value=default_start_date,
+                                   max_value=default_end_date)
+end_date = st.sidebar.date_input("Tanggal Akhir", default_end_date, min_value=default_start_date,
+                                 max_value=default_end_date)
+
+filtered_data = data[(data['order_purchase_timestamp'].dt.date >= start_date) &
+                     (data['order_purchase_timestamp'].dt.date <= end_date)].copy()
+
+filtered_data['estimated_delivery_time'] = (
+            filtered_data['order_estimated_delivery_date'] - filtered_data['order_purchase_timestamp']).dt.days
+filtered_data['delivery_time'] = (
+            filtered_data['order_delivered_customer_date'] - filtered_data['order_purchase_timestamp']).dt.days
+filtered_data = filtered_data[filtered_data['delivery_time'] >= 0]
+
+conditions = [
+    filtered_data['order_delivered_customer_date'].isna(),
+    filtered_data['order_delivered_customer_date'] > filtered_data['order_estimated_delivery_date'],
+    filtered_data['order_delivered_customer_date'] <= filtered_data['order_estimated_delivery_date']
+]
+status_labels = ['Pending', 'Late', 'On Time']
+filtered_data['delivery_status'] = np.select(conditions, status_labels, default='Unknown')
+
+st.title("Dashboard Analisis E-Commerce")
+st.markdown("---")
+
+st.header("Bagaimana waktu rata-rata pengiriman pesanan dibandingkan dengan estimasi waktu pengiriman?")
+
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader("Rata-rata Waktu Pengiriman vs Estimasi")
+    avg_actual_delivery = filtered_data['delivery_time'].mean()
+    avg_estimated_delivery = filtered_data['estimated_delivery_time'].mean()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual_delivery, avg_estimated_delivery],
+                palette=["blue", "red"], ax=ax)
+    st.pyplot(fig)
+
+with col2:
+    st.subheader("Distribusi Waktu Pengiriman vs Estimasi")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.boxplot(data=filtered_data[['delivery_time', 'estimated_delivery_time']], palette=["blue", "red"], ax=ax)
+    st.pyplot(fig)
+
+st.subheader("Distribusi Status Pengiriman")
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.countplot(x="delivery_status", data=filtered_data, palette="viridis", order=["On Time", "Late", "Pending"], ax=ax)
+st.pyplot(fig)
+
+st.subheader("Hubungan Waktu Pengiriman vs Estimasi")
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.scatterplot(x="estimated_delivery_time", y="delivery_time", hue="delivery_status", data=filtered_data, alpha=0.6,
+                ax=ax)
+plt.axline((0, 0), slope=1, linestyle="dashed", color="black", label="Ideal Line")
+st.pyplot(fig)
+
+show_analysis = st.button("Tampilkan Hasil Analisis Pertanyaan 1")
+if show_analysis:
+    st.session_state.analysis_shown = not st.session_state.get("analysis_shown", False)
+
+if st.session_state.get("analysis_shown", False):
+    st.markdown("""
+    Berdasarkan hasil analisis, terdapat perbedaan signifikan antara waktu pengiriman aktual dan estimasi yang mencerminkan efisiensi atau kendala dalam sistem logistik.
+    """)
+
+st.markdown("---")
+
+st.header("Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
+
+filtered_data['order_month'] = filtered_data['order_purchase_timestamp'].dt.to_period('M').astype(str)
+monthly_orders = filtered_data.groupby('order_month').size().reset_index(name='order_count')
+
+st.subheader("Tren Jumlah Pesanan")
 fig, ax = plt.subplots(figsize=(12, 5))
-data['order_purchase_timestamp'].dt.to_period("M").value_counts().sort_index().plot(kind='bar', ax=ax)
-ax.set_title("Jumlah Pesanan per Bulan")
-ax.set_xlabel("Bulan")
-ax.set_ylabel("Jumlah Pesanan")
-ax.tick_params(axis='x', rotation=45)
-st.pyplot(fig)
-
-st.subheader("❓ Bagaimana waktu rata-rata pengiriman pesanan dibandingkan dengan estimasi waktu pengiriman?")
-data['delivery_time'] = (data['order_delivered_customer_date'] - data['order_purchase_timestamp']).dt.days
-avg_actual_delivery = data['delivery_time'].mean()
-avg_estimated_delivery = (data['order_estimated_delivery_date'] - data['order_purchase_timestamp']).dt.days.mean()
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.barplot(x=["Actual Delivery Time", "Estimated Delivery Time"], y=[avg_actual_delivery, avg_estimated_delivery],
-            palette=["blue", "red"], ax=ax)
-ax.set_ylabel("Hari")
-ax.set_title("Rata-rata Waktu Pengiriman vs Estimasi")
-st.pyplot(fig)
-
-data['delivery_status'] = np.where(data['order_delivered_customer_date'] > data['order_estimated_delivery_date'], 'Late', 'On Time')
-delivery_counts = data['delivery_status'].value_counts()
-fig, ax = plt.subplots(figsize=(6, 4))
-delivery_counts.plot(kind='bar', color=["gray", "red"], ax=ax)
-ax.set_title("Distribusi Status Pengiriman")
-ax.set_xlabel("Status Pengiriman")
-ax.set_ylabel("Jumlah Pesanan")
-ax.set_xticklabels(delivery_counts.index, rotation=0)
-st.pyplot(fig)
-
-if 'show_answers' not in st.session_state:
-    st.session_state.show_answers = {}
-
-def toggle_answer(key):
-    st.session_state.show_answers[key] = not st.session_state.show_answers.get(key, False)
-
-if st.button("Jawaban Analisis", key="delivery_answer"):
-    toggle_answer("delivery_answer")
-if st.session_state.show_answers.get("delivery_answer", False):
-    st.write("Berdasarkan hasil analisis, terdapat perbedaan antara waktu pengiriman aktual dan estimasi yang dapat mencerminkan efisiensi atau kendala dalam proses logistik...")
-
-st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
-data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
-data_filtered = data[data['order_month'] <= '2018-08']
-monthly_orders = data_filtered.groupby('order_month').size()
-plt.figure(figsize=(12, 5))
-monthly_orders.plot(marker='o', linestyle='-', color='blue')
-plt.title("Tren Jumlah Pesanan dari Waktu ke Waktu (sampai Agustus 2018)")
-plt.xlabel("Waktu (Bulan)")
-plt.ylabel("Jumlah Pesanan")
+sns.lineplot(data=monthly_orders, x='order_month', y='order_count', marker='o', color='blue', ax=ax)
 plt.xticks(rotation=45)
-plt.grid()
-st.pyplot(plt)
-
-data['month'] = data['order_purchase_timestamp'].dt.month
-seasonal_trend = data.groupby('month').size()
-fig, ax = plt.subplots(figsize=(8, 4))
-seasonal_trend.plot(kind='bar', color='green', alpha=0.7, ax=ax)
-ax.set_title("Pola Musiman dalam Jumlah Pesanan")
-ax.set_xlabel("Bulan")
-ax.set_ylabel("Jumlah Pesanan")
-ax.set_xticks(range(12))
-ax.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
 st.pyplot(fig)
 
-if st.button("Jawaban Analisis", key="trend_answer"):
-    toggle_answer("trend_answer")
-if st.session_state.show_answers.get("trend_answer", False):
-    st.write("Analisis tren pesanan menunjukkan adanya fluktuasi jumlah pesanan dari waktu ke waktu...")
+filtered_data['month'] = filtered_data['order_purchase_timestamp'].dt.month
+seasonal_trend = filtered_data.groupby('month').size().reset_index(name='order_count')
 
-st.subheader("📋 Data E-Commerce")
-st.dataframe(data)
+st.subheader("Pola Musiman dalam Jumlah Pesanan")
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.barplot(data=seasonal_trend, x='month', y='order_count', palette="Blues_d", ax=ax)
+plt.xticks(ticks=range(12), labels=[calendar.month_abbr[i] for i in range(1, 13)])
+st.pyplot(fig)
+
+grouped_data = filtered_data.groupby(['order_month', 'delivery_status']).size().reset_index(name='order_count')
+
+st.subheader("Tren Pesanan Berdasarkan Status Pengiriman")
+fig, ax = plt.subplots(figsize=(12, 5))
+sns.lineplot(data=grouped_data, x='order_month', y='order_count', hue='delivery_status', marker='o', ax=ax)
+plt.xticks(rotation=45)
+st.pyplot(fig)
+
+if st.button("Tampilkan Hasil Analisis Pertanyaan 2"):
+    st.session_state.analysis_trend_shown = not st.session_state.get("analysis_trend_shown", False)
+
+if st.session_state.get("analysis_trend_shown", False):
+    st.markdown("""
+    Analisis tren jumlah pesanan menunjukkan adanya fluktuasi dari waktu ke waktu, dengan pola yang mencerminkan pertumbuhan bisnis serta faktor musiman.
+    """)
+
+st.markdown("---")
+st.caption('© 2025 Muhammad Zainudin Damar Jati. All Rights Reserved.')
