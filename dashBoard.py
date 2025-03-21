@@ -75,7 +75,7 @@ delivery_counts.plot(kind='bar', color=["gray", "red"], ax=ax)
 ax.set_title("Distribusi Status Pengiriman")
 ax.set_xlabel("Status Pengiriman")
 ax.set_ylabel("Jumlah Pesanan")
-ax.set_xticklabels(["On Time", "Late"], rotation=0)
+ax.set_xticklabels(delivery_counts.index, rotation=0)
 st.pyplot(fig)
 
 if 'show_answers' not in st.session_state:
@@ -87,7 +87,7 @@ def toggle_answer(key):
 if st.button("Jawaban Analisis", key="delivery_answer"):
     toggle_answer("delivery_answer")
 if st.session_state.show_answers.get("delivery_answer", False):
-    st.write("Berdasarkan hasil analisis, terdapat perbedaan antara waktu pengiriman aktual dan estimasi yang dapat mencerminkan efisiensi atau kendala dalam proses logistik. Jika waktu pengiriman aktual lebih lama dari estimasi, ini menunjukkan adanya keterlambatan yang dapat disebabkan oleh faktor operasional, kondisi cuaca, atau infrastruktur logistik yang kurang optimal. Sebaliknya, jika pengiriman berlangsung lebih cepat dari estimasi, maka sistem distribusi berjalan dengan efisien. Distribusi status pengiriman (On Time, Late, dan Pending) memberikan gambaran lebih jelas mengenai kinerja pengiriman. Jika proporsi pesanan yang mengalami keterlambatan (Late) cukup tinggi, maka optimalisasi dalam sistem logistik dan manajemen pengiriman diperlukan untuk meningkatkan kepuasan pelanggan dan memastikan layanan yang lebih andal.")
+    st.write("Berdasarkan hasil analisis, terdapat perbedaan antara waktu pengiriman aktual dan estimasi yang dapat mencerminkan efisiensi atau kendala dalam proses logistik...")
 
 st.subheader("❓ Bagaimana tren jumlah pesanan dari waktu ke waktu? Apakah ada pola musiman?")
 data['order_month'] = data['order_purchase_timestamp'].dt.to_period('M')
@@ -109,13 +109,14 @@ seasonal_trend.plot(kind='bar', color='green', alpha=0.7, ax=ax)
 ax.set_title("Pola Musiman dalam Jumlah Pesanan")
 ax.set_xlabel("Bulan")
 ax.set_ylabel("Jumlah Pesanan")
+ax.set_xticks(range(12))
 ax.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation=45)
 st.pyplot(fig)
 
 if st.button("Jawaban Analisis", key="trend_answer"):
     toggle_answer("trend_answer")
 if st.session_state.show_answers.get("trend_answer", False):
-    st.write("Analisis tren pesanan menunjukkan adanya fluktuasi jumlah pesanan dari waktu ke waktu. Jika tren menunjukkan peningkatan pesanan secara konsisten, ini menandakan pertumbuhan bisnis yang positif, sehingga strategi pemasaran dan operasional dapat diperkuat untuk mempertahankan momentum tersebut. Sebaliknya, jika terjadi tren penurunan, maka perlu dilakukan evaluasi terhadap faktor-faktor yang berpengaruh, seperti perubahan tren pasar, kondisi ekonomi, atau faktor musiman. Dari analisis pola musiman (seasonal trend), terlihat adanya lonjakan pesanan di bulan-bulan tertentu, misalnya pada akhir tahun, yang sering dikaitkan dengan musim belanja dan promosi. Dengan memahami pola ini, bisnis dapat mengoptimalkan strategi stok, pemasaran, dan operasional agar lebih responsif terhadap lonjakan permintaan di periode strategis, serta meningkatkan efisiensi dalam rantai pasokan dan distribusi.")
+    st.write("Analisis tren pesanan menunjukkan adanya fluktuasi jumlah pesanan dari waktu ke waktu...")
 
 st.subheader("📋 Data E-Commerce")
 st.dataframe(data)
