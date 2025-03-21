@@ -105,7 +105,7 @@ if show_analysis:
 
 if st.session_state.get("analysis_shown", False):
     st.markdown("""
-    Berdasarkan hasil analisis, terdapat perbedaan signifikan antara waktu pengiriman aktual dan estimasi yang mencerminkan efisiensi atau kendala dalam sistem logistik.
+    Berdasarkan hasil analisis, terdapat perbedaan signifikan antara waktu pengiriman aktual dan estimasi yang mencerminkan efisiensi atau kendala dalam sistem logistik. Jika waktu pengiriman aktual lebih lama dari estimasi, hal ini menunjukkan adanya keterlambatan yang dapat dipengaruhi oleh faktor operasional, infrastruktur logistik, kondisi cuaca, atau kendala dalam rantai pasokan. Keterlambatan ini berpotensi menurunkan tingkat kepuasan pelanggan dan meningkatkan risiko keluhan. Sebaliknya, jika pengiriman lebih cepat dari estimasi, ini menunjukkan efisiensi tinggi dalam sistem distribusi. Distribusi status pengiriman (On Time, Late, dan Pending) memberikan gambaran lebih jelas mengenai performa pengiriman. Jika jumlah pesanan dengan status Late cukup tinggi, ini menjadi indikasi bahwa sistem logistik perlu dioptimalkan untuk meningkatkan keandalan pengiriman. Langkah-langkah seperti penggunaan analitik prediktif untuk estimasi waktu yang lebih akurat, transparansi informasi kepada pelanggan, dan penguatan kerja sama dengan mitra logistik dapat diterapkan untuk meningkatkan kepuasan pelanggan serta memastikan layanan yang lebih andal dan efisien.
     """)
 
 st.markdown("---")
@@ -119,6 +119,7 @@ st.subheader("Tren Jumlah Pesanan")
 fig, ax = plt.subplots(figsize=(12, 5))
 sns.lineplot(data=monthly_orders, x='order_month', y='order_count', marker='o', color='blue', ax=ax)
 plt.xticks(rotation=45)
+ax.grid(True, linestyle="--", alpha=0.7)
 st.pyplot(fig)
 
 filtered_data['month'] = filtered_data['order_purchase_timestamp'].dt.month
@@ -136,6 +137,7 @@ st.subheader("Tren Pesanan Berdasarkan Status Pengiriman")
 fig, ax = plt.subplots(figsize=(12, 5))
 sns.lineplot(data=grouped_data, x='order_month', y='order_count', hue='delivery_status', marker='o', ax=ax)
 plt.xticks(rotation=45)
+ax.grid(True, linestyle="--", alpha=0.7)
 st.pyplot(fig)
 
 if st.button("Tampilkan Hasil Analisis Pertanyaan 2"):
@@ -143,8 +145,8 @@ if st.button("Tampilkan Hasil Analisis Pertanyaan 2"):
 
 if st.session_state.get("analysis_trend_shown", False):
     st.markdown("""
-    Analisis tren jumlah pesanan menunjukkan adanya fluktuasi dari waktu ke waktu, dengan pola yang mencerminkan pertumbuhan bisnis serta faktor musiman.
+    Analisis tren jumlah pesanan menunjukkan adanya fluktuasi dari waktu ke waktu, dengan pola yang mencerminkan pertumbuhan bisnis serta faktor musiman. Jika tren pesanan meningkat secara konsisten, ini mengindikasikan pertumbuhan bisnis yang positif, sehingga strategi pemasaran dan operasional dapat diperkuat untuk mempertahankan momentum tersebut. Sebaliknya, jika terjadi penurunan pesanan, perlu dilakukan evaluasi terhadap faktor-faktor yang memengaruhi, seperti perubahan tren pasar, kondisi ekonomi, persaingan, atau perubahan kebiasaan pelanggan. Dari analisis pola musiman (seasonal trend), terlihat bahwa terdapat lonjakan pesanan pada bulan-bulan tertentu, terutama di akhir tahun (November–Desember), yang dapat dikaitkan dengan musim belanja seperti Black Friday, Harbolnas, dan Natal. Dengan memahami pola ini, bisnis dapat menyusun strategi yang lebih efektif, seperti meningkatkan stok barang menjelang periode lonjakan pesanan, memperkuat kampanye pemasaran berbasis musiman, serta mengoptimalkan kapasitas pengiriman untuk menghindari keterlambatan akibat lonjakan permintaan. Dengan strategi yang tepat, perusahaan dapat memastikan stabilitas operasional dan meningkatkan kepuasan pelanggan, sekaligus memanfaatkan peluang dari pola musiman untuk meningkatkan profitabilitas.
     """)
 
 st.markdown("---")
-st.caption('© 2025 Muhammad Zainudin Damar Jati. All Rights Reserved.')
+st.caption('© 2025 Muhammad Zainudin Damar Jati.')
